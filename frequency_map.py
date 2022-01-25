@@ -1,16 +1,16 @@
 from pattern_count import pattern_count
 
-"""
-Creates pattern-count pairs in a dictionary.
-
-        Parameters:
-                text (str)
-                k (int): length of patterns to be extracted from text
-
-        Returns:
-                freq (dict): pattern-count pairs/frequency map
-"""
 def frequency_map(text, k):
+    """
+    Creates pattern-count pairs in a dictionary.
+
+            Parameters:
+                    text (str)
+                    k (int): length of patterns to be extracted from text
+
+            Returns:
+                    freq (dict): pattern-count pairs/frequency map
+    """
     freq = {}
     n = len(text)
     for i in range(n-k+1):
