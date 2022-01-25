@@ -1,4 +1,13 @@
-# This function returns counts of the occurence of k-mer pattern in a text
+"""
+Counts the occurrence of pattern in a text.
+
+        Parameters:
+                text (str)
+                pattern (str): potential substring within text
+
+        Returns:
+                count (int): number of pattern occured in text
+"""
 def pattern_count(text, pattern):
     count = 0
     for i in range(len(text)-len(pattern)+1):
