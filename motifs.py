@@ -1,9 +1,12 @@
 import math
-from pprint import pprint
+import random
+from pprint import pprint as pp
 
-def count(motifs):
+
+def count_with_pseudocounts(motifs):
     """
-    Finds the count of corresponding nucleotides of parallel motifs
+    Finds the count of corresponding nucleotides of parallel motifs. Pseudocounts
+    added to account for extremely unlikely nucleotides occurrences.
 
             Parameters:
                     motifs (list of strings): DNA sequences
@@ -14,7 +17,7 @@ def count(motifs):
     count = {} # initializing the count dictionary
     k = len(motifs[0]) # motif length
     for symbol in "ACGT":
-        count[symbol] = [0] * len(range(k))
+        count[symbol] = [1] * len(range(k))
 
     t = len(motifs) # number of motifs
     for i in range(t):
@@ -24,7 +27,7 @@ def count(motifs):
 
     return count
 
-def profile(motifs):
+def profile_with_pseudocounts(motifs):
     """
     Finds the profile matrix of list of motifs
 
@@ -35,8 +38,8 @@ def profile(motifs):
                     profile (dict): dictionary of nucleotides profile/proportion
     """
     profile = {}
-    counts = count(motifs)
-    t = len(motifs)
+    counts = count_with_pseudocounts(motifs)
+    t = len(motifs) + 4
 
     for nuc in counts.keys():
         profile[nuc] = [val/t for val in counts[nuc]]
@@ -55,7 +58,7 @@ def consensus(motifs):
                     every column
     """
     k = len(motifs[0])
-    counts = count(motifs)
+    counts = count_with_pseudocounts(motifs)
 
     consensus = ""
     # iterate through every column
@@ -109,7 +112,6 @@ def pr(text, profile):
     k = len(text)
 
     for i in range(k):
-        breakpoint()
         p *= profile[text[i]][i]
 
     return p
@@ -150,7 +152,7 @@ def greedy_motif_search(dna, k, t):
                     t (int): number of dna sequences
 
             Returns:
-                    most probable k-mer/motif (string)
+                    list (string) : best motif in each dna sequence
     """
     best_motifs = []
     # initializing best motifs as the first k-mer in list of DNAs
@@ -164,7 +166,7 @@ def greedy_motif_search(dna, k, t):
         motifs.append(dna[0][i:i+k])
         # build a profile matrix based on existing motifs
         for j in range(1, t):
-            p = profile(motifs)
+            p = profile_with_pseudocounts(motifs)
             # appends most probable motifs in the subsequent DNA string using 
             # profile matrix provided by 
             motifs.append(profile_most_probable_kmer(dna[j], k, p))
@@ -175,7 +177,7 @@ def greedy_motif_search(dna, k, t):
     return best_motifs
 
 def entropy(motifs):
-    p = profile(motifs)
+    p = profile_with_pseudocounts(motifs)
     n = len(motifs[0])
     symbols = p.keys()
 
@@ -189,3 +191,71 @@ def entropy(motifs):
             except ValueError:
                 continue
     return -h
+
+def motifs(profile, dna, k):
+    """
+    Finds the most probable motifs based on a profile
+
+           Parameters:
+                    dna (list of string): DNA sequences
+                    profile (dictionary): maps nucleotides to its probability of
+                    occurrence at each location in text
+
+            Returns:
+                    list (string) : most probable motif in each dna sequence
+    """
+    probable_motifs = []
+
+    # for every sequence in list of dna, find the most probable kmer based on
+    # profile
+    for seq in dna:
+        probable_motifs.append(profile_most_probable_kmer(seq, k, profile))
+
+    return probable_motifs
+
+def random_motifs(dna, k, t):
+    """
+    Generates random motifs from dna strings provided
+
+           Parameters:
+                    dna (list of string): DNA sequences
+                    k (int): length of motif/k-mer
+                    t (int): number of dna sequences
+
+            Returns:
+                    list (string) : randomly generated motifs
+    """
+    init_motifs = []
+
+    for seq in dna:
+        motif_start = random.randint(0, len(seq)-k)
+        init_motifs.append(seq[motif_start:motif_start+k])
+
+    return init_motifs
+
+def randomized_motif_search(dna, k, t):
+    """
+    Finds best motif by utilizing profile of a randomized initial motifs
+
+           Parameters:
+                    dna (list of string): DNA sequences
+                    k (int): length of motif/k-mer
+                    t (int): number of dna sequences
+
+            Returns:
+                    best_motifs (string) : consensus motif
+    """
+    # initialising current and best motifs
+    curr_motif = random_motifs(dna, k, t)
+    best_motifs = curr_motif
+
+    #breakpoint()
+    # finds new motifs until score stops improving
+    while True:
+        profile = profile_with_pseudocounts(curr_motif)
+        # updates current motifs using newly-generated profile
+        curr_motif = motifs(profile, dna, k)
+        if score(curr_motif) < score(best_motifs):
+            best_motifs = curr_motif
+        else:
+            return best_motifs
